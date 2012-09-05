@@ -3,9 +3,11 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
 	"code.google.com/p/go.net/websocket"
+	"fmt"
+	"level"
+	"net/http"
+	"player"
 	"text/template"
 )
 
