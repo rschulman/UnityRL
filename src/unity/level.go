@@ -1,6 +1,8 @@
 package main
 
-import "math/rand"
+import (
+	"math"
+)
 
 // stubs... to be moved to their own files later.
 type Mob struct{}
@@ -28,6 +30,42 @@ type Level struct {
 	players          map[string]Player
 	mobs             map[int]Mob
 	depth            uint
+
+	register   chan *Player
+	unregister chan *Player
+}
+
+func (l *Level) pov() {
+	var vision int
+	type positionMessage struct {
+		pcs     map[string]Player
+		mobs    map[int]Mob
+		terrain map[string][]tile
+	}
+	vision = 8
+
+	for _, subject := range l.players {
+		messageInstace := new(positionMessage)
+		messageInstance.pcs = make(map[string]Player)
+		messageInstace.mobs = make(map[int]Mob)
+		messageInstace.terrain = make(map[string][]tile)
+
+		for radian := 0; radian < Pi; radian += 0.025 {
+			centerx := subject.location.x
+			centery := subject.location.y
+			xmove := Math.Cos(radian)
+			ymove := Math.Sin(radian)
+			wallbug := false
+			for dist := 1; dist <= vision; dist++ {
+				centerx += xmove
+				centery += ymove
+				if centerx < 0 || centerx > l.MAXCOLS || centery < 0 || centery > l.MAXROWS {
+					break
+				}
+
+			}
+		}
+	}
 }
 
 func roomValid(l *Level, proposal room) bool {
@@ -78,10 +116,10 @@ func (l *Level) buildlevel() {
 		}
 	}
 
-	roomx := rand.Intn(10) + 5
-	roomy := rand.Intn(10) + 5
-	roomw := rand.Intn(10) + 5
-	roomh := rand.Intn(10) + 5
+	roomx := Math.rand.Intn(10) + 5
+	roomy := Math.rand.Intn(10) + 5
+	roomw := Math.rand.Intn(10) + 5
+	roomh := Math.rand.Intn(10) + 5
 	firstroom := room{roomx, roomy, roomw, roomh}
 	l.digroom(firstroom)
 	rooms := make([]room, 1)
@@ -91,39 +129,39 @@ func (l *Level) buildlevel() {
 		var proposal room
 		exitpoints := make([]point, 0)
 		for valid == false {
-			working_room := rand.Intn(len(rooms))
-			exitlength := rand.Intn(7) + 5
+			working_room := Math.rand.Intn(len(rooms))
+			exitlength := Math.rand.Intn(7) + 5
 			var startx, starty int
-			switch rand.Intn(4) + 1 {
+			switch Math.rand.Intn(4) + 1 {
 			case 1: // North wall of the room
-				exitx := rand.Intn(int(rooms[working_room].height)) + rooms[working_room].x
+				exitx := Math.rand.Intn(int(rooms[working_room].height)) + rooms[working_room].x
 				exity := rooms[working_room].y
-				startx = exitx - rand.Intn(roomw)
+				startx = exitx - Math.rand.Intn(roomw)
 				starty = exity - roomh - exitlength - 1
 				for hallways := 0; hallways < exitlength; hallways++ {
 					exitpoints = append(exitpoints, point{exitx, exity + hallways})
 				}
 			case 2: // East wall of the room
 				exitx := rooms[working_room].x + rooms[working_room].width
-				exity := rand.Intn(int(rooms[working_room].height)) + rooms[working_room].y
+				exity := Math.rand.Intn(int(rooms[working_room].height)) + rooms[working_room].y
 				startx = exitx + exitlength
-				starty = exity - rand.Intn(int(rooms[working_room].height))
+				starty = exity - Math.rand.Intn(int(rooms[working_room].height))
 				for hallways := 0; hallways < exitlength; hallways++ {
 					exitpoints = append(exitpoints, point{exitx + hallways, exity})
 				}
 			case 3: // South wall of the room
-				exitx := rand.Intn(int(rooms[working_room].height)) + rooms[working_room].x
+				exitx := Math.rand.Intn(int(rooms[working_room].height)) + rooms[working_room].x
 				exity := rooms[working_room].y + rooms[working_room].height
-				startx = exitx - rand.Intn(roomw)
+				startx = exitx - Math.rand.Intn(roomw)
 				starty = exity + exitlength
 				for hallways := 0; hallways < exitlength; hallways++ {
 					exitpoints = append(exitpoints, point{exitx + hallways, exity})
 				}
 			case 4: // West wall of the room
 				exitx := rooms[working_room].x
-				exity := rand.Intn(int(rooms[working_room].height)) + rooms[working_room].y
+				exity := Math.rand.Intn(int(rooms[working_room].height)) + rooms[working_room].y
 				startx = exitx - roomw - exitlength - 1
-				starty = exity - rand.Intn(int(roomh))
+				starty = exity - Math.rand.Intn(int(roomh))
 				for hallways := 0; hallways < exitlength; hallways++ {
 					exitpoints = append(exitpoints, point{exitx + hallways, exity})
 				}
@@ -140,8 +178,8 @@ func (l *Level) buildlevel() {
 	}
 	stairdone := false
 	for stairdone == false {
-		stairx := rand.Intn(l.MAXCOLS)
-		stairy := rand.Intn(l.MAXROWS)
+		stairx := Math.rand.Intn(l.MAXCOLS)
+		stairy := Math.rand.Intn(l.MAXROWS)
 		if l.data[stairx][stairy].physical == "floor" {
 			l.data[stairx][stairy].physical = "upstair"
 			stairdone = true
@@ -149,8 +187,8 @@ func (l *Level) buildlevel() {
 	}
 	stairdone = false
 	for stairdone == false {
-		stairx := rand.Intn(l.MAXCOLS)
-		stairy := rand.Intn(l.MAXROWS)
+		stairx := Math.rand.Intn(l.MAXCOLS)
+		stairy := Math.rand.Intn(l.MAXROWS)
 		if l.data[stairx][stairy].physical == "floor" {
 			l.data[stairx][stairy].physical = "downstair"
 			stairdone = true
@@ -167,6 +205,8 @@ func generate(dlvl uint) Level {
 			working.data[i][j] = tile{" "}
 		}
 	}
+	working.register = make(chan *Player)
+	working.unregister = make(chan *Player)
 	working.players = make(map[string]Player)
 	working.mobs = make(map[int]Mob)
 	working.depth = dlvl

@@ -5,7 +5,10 @@ type Player struct {
 
 	send chan string
 
-	dlvl int
+	dlvl     int
+	location point
+
+	name string
 
 	hp    int
 	str   int
