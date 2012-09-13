@@ -49,6 +49,7 @@ func (l *Level) pov() {
 		messageInstance.pcs = make(map[string]Player)
 		messageInstace.mobs = make(map[int]Mob)
 		messageInstace.terrain = make(map[string][]tile)
+		visited := make(map[int][]bool)
 
 		for radian := 0; radian < Pi; radian += 0.025 {
 			centerx := subject.location.x
@@ -62,7 +63,13 @@ func (l *Level) pov() {
 				if centerx < 0 || centerx > l.MAXCOLS || centery < 0 || centery > l.MAXROWS {
 					break
 				}
-
+				// Check to see if this location has been scanned before.
+				currx := Math.Floor(centerx)
+				curry := Math.Floor(centery)
+				if visited[currx][curry] == false {
+					visited[currx][curry] = true
+					messageInstace.terrain[l.data[currx][curry]].
+				}
 			}
 		}
 	}
