@@ -1,5 +1,7 @@
 package main
 
+import "code.google.com/p/go.net/websocket"
+
 type Player struct {
 	ws *websocket.Conn
 
