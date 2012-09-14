@@ -7,23 +7,6 @@ import (
 	"text/template"
 )
 
-func (h *hub) run() {
-	for {
-		select {
-		case m := <-h.broadcast:
-			for c := range h.connections {
-				select {
-				case c.send <- m:
-				default:
-					delete(h.connections, c)
-					close(c.send)
-					go c.ws.Close()
-				}
-			}
-		}
-	}
-}
-
 var rootTempl = template.Must(template.ParseFiles("index.html"))
 
 func rootHandler(c http.ResponseWriter, req *http.Request) {
