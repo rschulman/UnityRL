@@ -24,15 +24,36 @@ type room struct {
 	height int
 }
 
+type moveorder struct {
+	mover       *Player
+	destination point
+}
+
 type Level struct {
 	MAXROWS, MAXCOLS int
 	data             [][]tile
-	players          map[string]Player
+	players          map[string]*Player
 	mobs             map[int]Mob
 	depth            uint
+	downstairs       point
+	upstairs         point
 
 	register   chan *Player
 	unregister chan *Player
+	playermove chan *moveorder
+}
+
+func (l *Level) run() {
+	for {
+		select {
+		case move := <-l.playermove:
+			// Process the move and then call a pov if it succeeds.
+		case newplayer := <-l.register:
+			newplayer.location = point{l.upstairs.x, l.upstairs.y}
+			l.players[newplayer.name] = newplayer
+			go l.pov()
+		}
+	}
 }
 
 func (l *Level) pov() {
@@ -54,7 +75,7 @@ func (l *Level) pov() {
 		messageInstance.messageType = "update"
 		visited := make(map[point]bool)
 
-		for radian := 0; radian < Pi; radian += 0.025 {
+		for radian := 0.0; radian < Pi; radian += 0.025 {
 			centerx := subject.location.x
 			centery := subject.location.y
 			xmove := math.Cos(radian)
@@ -193,6 +214,8 @@ func (l *Level) buildlevel() {
 		stairy := math.Rand.Intn(l.MAXROWS)
 		if l.data[stairx][stairy].physical == "floor" {
 			l.data[stairx][stairy].physical = "upstair"
+			l.upstair.x = stairx
+			l.upstair.y = stairy
 			stairdone = true
 		}
 	}
@@ -202,6 +225,8 @@ func (l *Level) buildlevel() {
 		stairy := math.Rand.Intn(l.MAXROWS)
 		if l.data[stairx][stairy].physical == "floor" {
 			l.data[stairx][stairy].physical = "downstair"
+			l.downstair.x = stairx
+			l.downstair.y = stairy
 			stairdone = true
 		}
 	}
