@@ -158,7 +158,8 @@ $(document).ready(function() {
     var socket = new WebSocket("ws://localhost:8080/ws");
 
     socket.onmessage = function(message) {
-      var servermessage = JSON.parse(message)
+      console.log(message.data);
+      var servermessage = JSON.parse(message.data)
       switch(servermessage.messageType) {
         case "update":
           constructMap(servermessage, tempCopy);

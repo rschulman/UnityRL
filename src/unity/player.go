@@ -27,6 +27,7 @@ type Player struct {
 }
 
 func (c *Player) reader() {
+	fmt.Println("Reading from websocket.")
 	for {
 		var message string
 		var decode userMessage
@@ -49,6 +50,7 @@ func (c *Player) reader() {
 }
 
 func (c *Player) writer() {
+	fmt.Println("Writing loop started.")
 	for message := range c.send {
 		err := websocket.Message.Send(c.ws, message)
 		if err != nil {

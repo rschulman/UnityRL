@@ -25,10 +25,12 @@ type Level struct {
 }
 
 func (l *Level) run() {
+	var newplayer *Player
 	fmt.Println("Level 1 loop started")
 	for {
 		select {
 		case move := <-l.playermove:
+			fmt.Println("playermove")
 			// Process the move and then call a pov if it succeeds.
 			var movevector point
 			switch move.direction {
@@ -55,7 +57,7 @@ func (l *Level) run() {
 				l.players[move.mover].location.y = newlocation.y
 				go l.pov()
 			}
-		case newplayer := <-l.register:
+		case newplayer = <-l.register:
 			fmt.Println("Level: New player registered")
 			newplayer.location = point{l.upstair.x, l.upstair.y}
 			l.players[newplayer.id] = newplayer
@@ -66,45 +68,55 @@ func (l *Level) run() {
 
 func (l *Level) pov() {
 	var vision int
-	type positionMessage struct {
-		messageType string
-		pcs         map[string]Player
-		mobs        map[int]Mob
-		terrain     map[string][]tile
-		you         point
+
+	type ExportPoint struct {
+		X, Y int
 	}
+
+	type positionMessage struct {
+		MessageType string
+		PCs         map[string]Player
+		Mobs        map[string]Mob
+		Terrain     map[string][]ExportPoint
+		You         ExportPoint
+	}
+
 	vision = 8
 
 	for _, subject := range l.players {
 		messageInstance := new(positionMessage)
-		messageInstance.pcs = make(map[string]Player)
-		messageInstance.mobs = make(map[int]Mob)
-		messageInstance.terrain = make(map[string][]tile)
-		messageInstance.messageType = "update"
-		visited := make(map[point]bool)
+		messageInstance.PCs = make(map[string]Player)
+		messageInstance.Mobs = make(map[string]Mob)
+		messageInstance.Terrain = make(map[string][]ExportPoint)
+		messageInstance.MessageType = "update"
+		visited := make(map[ExportPoint]bool)
 
 		for radian := 0.0; radian < math.Pi; radian += 0.025 {
 			centerx := float64(subject.location.x)
 			centery := float64(subject.location.y)
 			xmove := math.Cos(radian)
 			ymove := math.Sin(radian)
-			//go inswallbug := false
+			//wallbug := false
 			for dist := 1; dist <= vision; dist++ {
 				centerx += xmove
 				centery += ymove
 				if centerx < 0 || int(centerx) > l.MAXCOLS || centery < 0 || int(centery) > l.MAXROWS {
 					break
 				}
+				curr := ExportPoint{int(math.Floor(centerx)), int(math.Floor(centery))}
+				if l.data[curr.X][curr.Y].physical == " " { // We're looking into a wall, so we can safely stop right now.
+					continue
+				}
 				// Check to see if this location has been scanned before.
-				curr := point{int(math.Floor(centerx)), int(math.Floor(centery))}
 				if visited[curr] == false {
 					visited[curr] = true
-					messageInstance.terrain[l.data[curr.x][curr.y].physical] = append(messageInstance.terrain[l.data[curr.x][curr.y].physical], tile{l.data[curr.x][curr.y].physical})
+					messageInstance.Terrain[l.data[curr.X][curr.Y].physical] = append(messageInstance.Terrain[l.data[curr.X][curr.Y].physical], curr)
 				}
 			}
 		}
-		messageInstance.you = subject.location
+		messageInstance.You = ExportPoint{subject.location.x, subject.location.y}
 		m, err := json.Marshal(messageInstance)
+		fmt.Println(messageInstance)
 		if err == nil {
 			subject.send <- string(m)
 		}
@@ -243,8 +255,8 @@ func (l *Level) buildlevel() {
 	}
 }
 
-func generate(dlvl uint) Level {
-	working := Level{MAXROWS: 999, MAXCOLS: 999}
+func generate(dlvl uint) *Level {
+	working := &Level{MAXROWS: 999, MAXCOLS: 999}
 	working.data = make([][]tile, working.MAXROWS)
 	for i := range working.data {
 		working.data[i] = make([]tile, working.MAXCOLS)
