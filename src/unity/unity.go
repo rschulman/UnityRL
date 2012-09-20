@@ -5,16 +5,23 @@ import (
 	"fmt"
 	"net/http"
 	"text/template"
+	//"log"
 )
 
+type userMessage struct {
+	messageType    string
+	messageContent string
+}
+
 var rootTempl = template.Must(template.ParseFiles("index.html"))
+var groundfloor Level
 
 func rootHandler(c http.ResponseWriter, req *http.Request) {
 	rootTempl.Execute(c, req.Host)
 }
 
 func wsHandler(ws *websocket.Conn) {
-	c := &Player{send: make(chan string, 256), ws: ws, dlvl: 1, hp: 13, str: 8, dex: 8, intel: 8, wis: 8}
+	c := &Player{send: make(chan string, 256), ws: ws, id: 1, dlvl: 1, level: &groundfloor, hp: 13, str: 8, dex: 8, intel: 8, wis: 8}
 	groundfloor.register <- c
 	defer func() { groundfloor.unregister <- c }()
 	go c.writer()
@@ -23,10 +30,13 @@ func wsHandler(ws *websocket.Conn) {
 
 func main() {
 	http.HandleFunc("/", rootHandler)
+	http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
 	http.Handle("/ws", websocket.Handler(wsHandler))
+	fmt.Println("Creating new first level.")
+	var groundfloor = generate(1)
+	groundfloor.buildlevel()
+	go groundfloor.run()
 	if err := http.ListenAndServe("localhost:8080", nil); err != nil {
 		fmt.Println("error")
 	}
-	var groundfloor = generate(1)
-	groundfloor.buildlevel()
 }

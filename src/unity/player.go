@@ -1,13 +1,20 @@
 package main
 
-import "code.google.com/p/go.net/websocket"
+import (
+	"code.google.com/p/go.net/websocket"
+	"encoding/json"
+	"strings"
+	"fmt"
+)
 
 type Player struct {
 	ws *websocket.Conn
+	id int
 
 	send chan string
 
 	dlvl     int
+	level    *Level
 	location point
 
 	name string
@@ -22,11 +29,21 @@ type Player struct {
 func (c *Player) reader() {
 	for {
 		var message string
+		var decode userMessage
+
 		err := websocket.Message.Receive(c.ws, &message)
 		if err != nil {
 			break
 		}
-		h.broadcast <- message
+		dec := json.NewDecoder(strings.NewReader(message))
+		if err := dec.Decode(&decode); err != nil {
+			break
+		}
+		fmt.Print("New message from player", decode.messageContent)
+		switch decode.messageType {
+		case "move":
+			c.level.playermove <- &moveorder{c.id, decode.messageContent}
+		}
 	}
 	c.ws.Close()
 }

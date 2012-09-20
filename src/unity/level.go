@@ -2,41 +2,22 @@ package main
 
 import (
 	"math"
+	"math/rand"
+	"encoding/json"
+	"fmt"
 )
 
 // stubs... to be moved to their own files later.
 type Mob struct{}
 
-type tile struct { // single tile
-	physical string // "floor" or "wall" or "upstair" etc
-
-}
-
-type point struct {
-	x int
-	y int
-}
-
-type room struct {
-	x      int
-	y      int
-	width  int
-	height int
-}
-
-type moveorder struct {
-	mover       *Player
-	destination point
-}
-
 type Level struct {
 	MAXROWS, MAXCOLS int
 	data             [][]tile
-	players          map[string]*Player
+	players          map[int]*Player
 	mobs             map[int]Mob
 	depth            uint
-	downstairs       point
-	upstairs         point
+	downstair        point
+	upstair          point
 
 	register   chan *Player
 	unregister chan *Player
@@ -44,13 +25,40 @@ type Level struct {
 }
 
 func (l *Level) run() {
+	fmt.Println("Level 1 loop started")
 	for {
 		select {
 		case move := <-l.playermove:
 			// Process the move and then call a pov if it succeeds.
+			var movevector point
+			switch move.direction {
+			case "n":
+				movevector = point{0, -1}
+			case "ne":
+				movevector = point{1, -1}
+			case "e":
+				movevector = point{1, 0}
+			case "se":
+				movevector = point{1, 1}
+			case "s":
+				movevector = point{0, 1}
+			case "sw":
+				movevector = point{-1, 1}
+			case "w":
+				movevector = point{-1, 0}
+			case "nw":
+				movevector = point{-1, -1}
+			}
+			newlocation := point{l.players[move.mover].location.x + movevector.x, l.players[move.mover].location.y + movevector.y}
+			if newlocation.x <= l.MAXCOLS && newlocation.x > 0 && newlocation.y <= l.MAXROWS && newlocation.y > 0 && l.data[newlocation.x][newlocation.y].physical == "floor" || l.data[newlocation.x][newlocation.y].physical == "upstair" || l.data[newlocation.x][newlocation.y].physical == "downstair" {
+				l.players[move.mover].location.x = newlocation.x
+				l.players[move.mover].location.y = newlocation.y
+				go l.pov()
+			}
 		case newplayer := <-l.register:
-			newplayer.location = point{l.upstairs.x, l.upstairs.y}
-			l.players[newplayer.name] = newplayer
+			fmt.Println("Level: New player registered")
+			newplayer.location = point{l.upstair.x, l.upstair.y}
+			l.players[newplayer.id] = newplayer
 			go l.pov()
 		}
 	}
@@ -75,28 +83,31 @@ func (l *Level) pov() {
 		messageInstance.messageType = "update"
 		visited := make(map[point]bool)
 
-		for radian := 0.0; radian < Pi; radian += 0.025 {
-			centerx := subject.location.x
-			centery := subject.location.y
+		for radian := 0.0; radian < math.Pi; radian += 0.025 {
+			centerx := float64(subject.location.x)
+			centery := float64(subject.location.y)
 			xmove := math.Cos(radian)
 			ymove := math.Sin(radian)
-			wallbug := false
+			//go inswallbug := false
 			for dist := 1; dist <= vision; dist++ {
 				centerx += xmove
 				centery += ymove
-				if centerx < 0 || centerx > l.MAXCOLS || centery < 0 || centery > l.MAXROWS {
+				if centerx < 0 || int(centerx) > l.MAXCOLS || centery < 0 || int(centery) > l.MAXROWS {
 					break
 				}
 				// Check to see if this location has been scanned before.
-				curr := point{math.Floor(centerx), math.Floor(centery)}
+				curr := point{int(math.Floor(centerx)), int(math.Floor(centery))}
 				if visited[curr] == false {
 					visited[curr] = true
-					messageInstace.terrain[l.data[curr.x][curr.y].physical] = tile{l.data[curr.x][curr.y].physical}
+					messageInstance.terrain[l.data[curr.x][curr.y].physical] = append(messageInstance.terrain[l.data[curr.x][curr.y].physical], tile{l.data[curr.x][curr.y].physical})
 				}
 			}
 		}
-		messageInstace.you = subject.location
-		subject.send <- messageInstace
+		messageInstance.you = subject.location
+		m, err := json.Marshal(messageInstance)
+		if err == nil {
+			subject.send <- string(m)
+		}
 	}
 }
 
@@ -142,16 +153,16 @@ func (l *Level) digpoint(target point) {
 }
 
 func (l *Level) buildlevel() {
-	for x := 0; x <= int(l.MAXROWS); x++ {
-		for y := 0; y <= int(l.MAXCOLS); y++ {
+	for x := 0; x < int(l.MAXROWS); x++ {
+		for y := 0; y < int(l.MAXCOLS); y++ {
 			l.data[x][y].physical = " "
 		}
 	}
 
-	roomx := math.Rand.Intn(10) + 5
-	roomy := math.Rand.Intn(10) + 5
-	roomw := math.Rand.Intn(10) + 5
-	roomh := math.Rand.Intn(10) + 5
+	roomx := rand.Intn(10) + 5
+	roomy := rand.Intn(10) + 5
+	roomw := rand.Intn(10) + 5
+	roomh := rand.Intn(10) + 5
 	firstroom := room{roomx, roomy, roomw, roomh}
 	l.digroom(firstroom)
 	rooms := make([]room, 1)
@@ -161,39 +172,39 @@ func (l *Level) buildlevel() {
 		var proposal room
 		exitpoints := make([]point, 0)
 		for valid == false {
-			working_room := math.Rand.Intn(len(rooms))
-			exitlength := math.Rand.Intn(7) + 5
+			working_room := rand.Intn(len(rooms))
+			exitlength := rand.Intn(7) + 5
 			var startx, starty int
-			switch math.Rand.Intn(4) + 1 {
+			switch rand.Intn(4) + 1 {
 			case 1: // North wall of the room
-				exitx := math.Rand.Intn(int(rooms[working_room].height)) + rooms[working_room].x
+				exitx := rand.Intn(int(rooms[working_room].height)) + rooms[working_room].x
 				exity := rooms[working_room].y
-				startx = exitx - math.Rand.Intn(roomw)
+				startx = exitx - rand.Intn(roomw)
 				starty = exity - roomh - exitlength - 1
 				for hallways := 0; hallways < exitlength; hallways++ {
 					exitpoints = append(exitpoints, point{exitx, exity + hallways})
 				}
 			case 2: // East wall of the room
 				exitx := rooms[working_room].x + rooms[working_room].width
-				exity := math.Rand.Intn(int(rooms[working_room].height)) + rooms[working_room].y
+				exity := rand.Intn(int(rooms[working_room].height)) + rooms[working_room].y
 				startx = exitx + exitlength
-				starty = exity - math.Rand.Intn(int(rooms[working_room].height))
+				starty = exity - rand.Intn(int(rooms[working_room].height))
 				for hallways := 0; hallways < exitlength; hallways++ {
 					exitpoints = append(exitpoints, point{exitx + hallways, exity})
 				}
 			case 3: // South wall of the room
-				exitx := math.Rand.Intn(int(rooms[working_room].height)) + rooms[working_room].x
+				exitx := rand.Intn(int(rooms[working_room].height)) + rooms[working_room].x
 				exity := rooms[working_room].y + rooms[working_room].height
-				startx = exitx - math.Rand.Intn(roomw)
+				startx = exitx - rand.Intn(roomw)
 				starty = exity + exitlength
 				for hallways := 0; hallways < exitlength; hallways++ {
 					exitpoints = append(exitpoints, point{exitx + hallways, exity})
 				}
 			case 4: // West wall of the room
 				exitx := rooms[working_room].x
-				exity := math.Rand.Intn(int(rooms[working_room].height)) + rooms[working_room].y
+				exity := rand.Intn(int(rooms[working_room].height)) + rooms[working_room].y
 				startx = exitx - roomw - exitlength - 1
-				starty = exity - math.Rand.Intn(int(roomh))
+				starty = exity - rand.Intn(int(roomh))
 				for hallways := 0; hallways < exitlength; hallways++ {
 					exitpoints = append(exitpoints, point{exitx + hallways, exity})
 				}
@@ -210,8 +221,8 @@ func (l *Level) buildlevel() {
 	}
 	stairdone := false
 	for stairdone == false {
-		stairx := math.Rand.Intn(l.MAXCOLS)
-		stairy := math.Rand.Intn(l.MAXROWS)
+		stairx := rand.Intn(l.MAXCOLS)
+		stairy := rand.Intn(l.MAXROWS)
 		if l.data[stairx][stairy].physical == "floor" {
 			l.data[stairx][stairy].physical = "upstair"
 			l.upstair.x = stairx
@@ -221,8 +232,8 @@ func (l *Level) buildlevel() {
 	}
 	stairdone = false
 	for stairdone == false {
-		stairx := math.Rand.Intn(l.MAXCOLS)
-		stairy := math.Rand.Intn(l.MAXROWS)
+		stairx := rand.Intn(l.MAXCOLS)
+		stairy := rand.Intn(l.MAXROWS)
 		if l.data[stairx][stairy].physical == "floor" {
 			l.data[stairx][stairy].physical = "downstair"
 			l.downstair.x = stairx
@@ -243,7 +254,8 @@ func generate(dlvl uint) Level {
 	}
 	working.register = make(chan *Player)
 	working.unregister = make(chan *Player)
-	working.players = make(map[string]Player)
+	working.playermove = make(chan *moveorder)
+	working.players = make(map[int]*Player)
 	working.mobs = make(map[int]Mob)
 	working.depth = dlvl
 	return working
