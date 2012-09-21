@@ -254,43 +254,43 @@ $(document).ready(function() {
         switch (keycode) {
             case 104:
               message.direction = "w";
-              socket.send('move', JSON.stringify(message));
+              socket.send(JSON.stringify(message));
               break;
             case 106:
               message.direction = "s";
-              socket.send('move', JSON.stringify(message));
+              socket.send(JSON.stringify(message));
               break;
             case 107:
               message.direction = "n";
-              socket.send('move', JSON.stringify(message));
+              socket.send(JSON.stringify(message));
               break;
             case 108:
               message.direction = "e";
-              socket.send('move', JSON.stringify(message));
+              socket.send(JSON.stringify(message));
               break;
             case 121:
               message.direction = "nw";
-              socket.send('move', JSON.stringify(message));
+              socket.send(JSON.stringify(message));
               break;
             case 117:
               message.direction = "ne";
-              socket.send('move', JSON.stringify(message));
+              socket.send(JSON.stringify(message));
               break;
             case 98:
               message.direction = "sw";
-              socket.send('move', JSON.stringify(message));
+              socket.send(JSON.stringify(message));
               break;
             case 110:
               message.direction = "se";
-              socket.send('move', JSON.stringify(message));
+              socket.send(JSON.stringify(message));
               break;
             case 60:
               message.direction = "up"
-              socket.send('levelchange', JSON.stringify(message));
+              socket.send(JSON.stringify(message));
               break;
             case 62:
               message.direction = "down"
-              socket.send('levelchange', JSON.stringify(message));
+              socket.send(JSON.stringify(message));
               break;
         }
     });

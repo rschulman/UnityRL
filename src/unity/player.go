@@ -33,17 +33,19 @@ func (c *Player) reader() {
 		var decode userMessage
 
 		err := websocket.Message.Receive(c.ws, &message)
+		fmt.Println(message)
 		if err != nil {
 			break
 		}
 		dec := json.NewDecoder(strings.NewReader(message))
 		if err := dec.Decode(&decode); err != nil {
+			fmt.Println(err)
 			break
 		}
-		fmt.Print("New message from player", decode.messageContent)
-		switch decode.messageType {
+		fmt.Print("New message from player", decode.MessageContent)
+		switch decode.MessageType {
 		case "move":
-			c.level.playermove <- &moveorder{c.id, decode.messageContent}
+			c.level.playermove <- &moveorder{c.id, decode.MessageContent}
 		}
 	}
 	c.ws.Close()

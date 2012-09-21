@@ -8,11 +8,6 @@ import (
 	//"log"
 )
 
-type userMessage struct {
-	messageType    string
-	messageContent string
-}
-
 var rootTempl = template.Must(template.ParseFiles("index.html"))
 
 func rootHandler(c http.ResponseWriter, req *http.Request) {

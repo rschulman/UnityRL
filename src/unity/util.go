@@ -21,3 +21,8 @@ type moveorder struct {
 	mover     int
 	direction string
 }
+
+type userMessage struct {
+	MessageType    string
+	MessageContent string
+}

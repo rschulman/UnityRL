@@ -91,26 +91,28 @@ func (l *Level) pov() {
 		messageInstance.MessageType = "update"
 		visited := make(map[ExportPoint]bool)
 
-		for radian := 0.0; radian < math.Pi; radian += 0.025 {
+		for radian := 0.0; radian < 2*math.Pi; radian += 0.025 {
 			centerx := float64(subject.location.x)
 			centery := float64(subject.location.y)
 			xmove := math.Cos(radian)
 			ymove := math.Sin(radian)
 			//wallbug := false
-			for dist := 1; dist <= vision; dist++ {
+			dist := 0
+			for {
+				dist++
 				centerx += xmove
 				centery += ymove
 				if centerx < 0 || int(centerx) > l.MAXCOLS || centery < 0 || int(centery) > l.MAXROWS {
 					break
 				}
 				curr := ExportPoint{int(math.Floor(centerx)), int(math.Floor(centery))}
-				if l.data[curr.X][curr.Y].physical == " " { // We're looking into a wall, so we can safely stop right now.
-					break
-				}
 				// Check to see if this location has been scanned before.
 				if visited[curr] == false {
 					visited[curr] = true
 					messageInstance.Terrain[l.data[curr.X][curr.Y].physical] = append(messageInstance.Terrain[l.data[curr.X][curr.Y].physical], curr)
+				}
+				if l.data[curr.X][curr.Y].physical == "wall" || dist > vision { // We're looking into a wall, so we can safely stop right now.
+					break
 				}
 			}
 		}
@@ -138,16 +140,16 @@ func roomValid(l *Level, proposal room) bool {
 }
 
 func (l *Level) digroom(proposal room) {
-	for col := proposal.x - 1; col < proposal.x+proposal.width; col++ {
+	for col := proposal.x - 1; col <= proposal.x+proposal.width; col++ {
 		l.data[col][proposal.y-1].physical = "wall"
 		l.data[col][proposal.y+proposal.height].physical = "wall"
 	}
-	for row := proposal.y - 1; row < proposal.y+proposal.height; row++ {
+	for row := proposal.y - 1; row <= proposal.y+proposal.height; row++ {
 		l.data[proposal.x-1][row].physical = "wall"
 		l.data[proposal.x+proposal.width][row].physical = "wall"
 	}
-	for col := proposal.x; col < proposal.x+proposal.width-1; col++ {
-		for row := proposal.y; row < proposal.y+proposal.height-1; row++ {
+	for col := proposal.x; col <= proposal.x+proposal.width-1; col++ {
+		for row := proposal.y; row <= proposal.y+proposal.height-1; row++ {
 			l.data[col][row].physical = "floor"
 		}
 	}
