@@ -3,7 +3,7 @@ package main
 import (
 	"code.google.com/p/go.net/websocket"
 	"encoding/json"
-	"strings"
+	//"strings"
 	"fmt"
 )
 
@@ -37,12 +37,13 @@ func (c *Player) reader() {
 		if err != nil {
 			break
 		}
-		dec := json.NewDecoder(strings.NewReader(message))
-		if err := dec.Decode(&decode); err != nil {
-			fmt.Println(err)
-			break
-		}
-		fmt.Print("New message from player", decode.MessageContent)
+		/*		dec := json.NewDecoder(strings.NewReader(message))
+				if err := dec.Decode(&decode); err != nil {
+					fmt.Println(err)
+					break
+				}
+		*/
+		err = json.Unmarshal([]byte(message), &decode)
 		switch decode.MessageType {
 		case "move":
 			c.level.playermove <- &moveorder{c.id, decode.MessageContent}

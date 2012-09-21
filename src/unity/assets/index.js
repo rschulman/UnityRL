@@ -249,47 +249,46 @@ $(document).ready(function() {
 	
     $('html').keypress(function (event) {
         var keycode = (event.keyCode ? event.keyCode : event.which);
-        var message = {messageType:"move"}
-        console.log(keycode);
+        var message = {MessageType:"move"}
         switch (keycode) {
             case 104:
-              message.direction = "w";
+              message.MessageContent = "w";
               socket.send(JSON.stringify(message));
               break;
             case 106:
-              message.direction = "s";
+              message.MessageContent = "s";
               socket.send(JSON.stringify(message));
               break;
             case 107:
-              message.direction = "n";
+              message.MessageContent = "n";
               socket.send(JSON.stringify(message));
               break;
             case 108:
-              message.direction = "e";
+              message.MessageContent = "e";
               socket.send(JSON.stringify(message));
               break;
             case 121:
-              message.direction = "nw";
+              message.MessageContent = "nw";
               socket.send(JSON.stringify(message));
               break;
             case 117:
-              message.direction = "ne";
+              message.MessageContent = "ne";
               socket.send(JSON.stringify(message));
               break;
             case 98:
-              message.direction = "sw";
+              message.MessageContent = "sw";
               socket.send(JSON.stringify(message));
               break;
             case 110:
-              message.direction = "se";
+              message.MessageContent = "se";
               socket.send(JSON.stringify(message));
               break;
             case 60:
-              message.direction = "up"
+              message.MessageContent = "up"
               socket.send(JSON.stringify(message));
               break;
             case 62:
-              message.direction = "down"
+              message.MessageContent = "down"
               socket.send(JSON.stringify(message));
               break;
         }

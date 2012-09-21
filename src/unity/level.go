@@ -30,7 +30,6 @@ func (l *Level) run() {
 	for {
 		select {
 		case move := <-l.playermove:
-			fmt.Println("playermove")
 			// Process the move and then call a pov if it succeeds.
 			var movevector point
 			switch move.direction {
@@ -118,7 +117,6 @@ func (l *Level) pov() {
 		}
 		messageInstance.You = ExportPoint{subject.location.x, subject.location.y}
 		m, err := json.Marshal(messageInstance)
-		fmt.Println(messageInstance)
 		if err == nil {
 			subject.send <- string(m)
 		}
