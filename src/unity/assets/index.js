@@ -102,33 +102,32 @@ var constructMap = function (object_data, tempCopy) {
       }
     }
 
-	_ref = object_data.terrain;
+	_ref = object_data.Terrain;
 	for (key in _ref) {
 		location = _ref[key];
 		//console.log(location);
 		var point, _i, _len;
-
 		for (_i = 0, _len = location.length; _i < _len; _i++) {
 		  point = location[_i];
-		  tempCopy[point[0]][point[1]].tile = key.toString();
-		  tempCopy[point[0]][point[1]].visible = true
-		  tempCopy[point[0]][point[1]].remembered = true
+		  tempCopy[point.Y][point.X].tile = key.toString();
+		  tempCopy[point.Y][point.X].visible = true
+		  tempCopy[point.Y][point.X].remembered = true
 		}
 	}
 	
 	var name, player;
-	var players_data = object_data["pcs"];
-	for (name in object_data["pcs"]) {
+	var players_data = object_data["PCs"];
+	for (name in object_data["PCs"]) {
 	  player = players_data[name];
-	  tempCopy[player[1]][player[0]].tile = "floor";
-	  tempCopy[player[1]][player[0]].contents = "player";
-	  tempCopy[player[1]][player[0]].id = player.id;
-	  tempCopy[player[1]][player[0]].visibile = true;
-	  tempCopy[player[1]][player[0]].remembered = true;
+	  tempCopy[player.Y][player.X].tile = "floor";
+	  tempCopy[player.Y][player.X].contents = "player";
+	  tempCopy[player.Y][player.X].id = player.id;
+	  tempCopy[player.Y][player.X].visibile = true;
+	  tempCopy[player.Y][player.X].remembered = true;
 	}
 	
-	centerx = object_data.you[0]
-	centery = object_data.you[1]
+	centerx = object_data.You.X
+	centery = object_data.You.Y
 	tempCopy[centery][centerx].tile = "floor"
 	tempCopy[centery][centerx].contents = "player";
 	tempCopy[centery][centerx].id = 0;
@@ -158,10 +157,10 @@ $(document).ready(function() {
     var socket = new WebSocket("ws://localhost:8080/ws");
 
     socket.onmessage = function(message) {
-      console.log(message.data);
       var servermessage = JSON.parse(message.data)
-      switch(servermessage.messageType) {
+      switch(servermessage.MessageType) {
         case "update":
+          console.log(servermessage)
           constructMap(servermessage, tempCopy);
           break;
       }

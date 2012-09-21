@@ -105,7 +105,7 @@ func (l *Level) pov() {
 				}
 				curr := ExportPoint{int(math.Floor(centerx)), int(math.Floor(centery))}
 				if l.data[curr.X][curr.Y].physical == " " { // We're looking into a wall, so we can safely stop right now.
-					continue
+					break
 				}
 				// Check to see if this location has been scanned before.
 				if visited[curr] == false {
