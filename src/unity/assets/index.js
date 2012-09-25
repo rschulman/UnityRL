@@ -1,4 +1,5 @@
-var WINDOW = 40;
+var WINDOWW = 0;
+var WINDOWH = 0;
 var getCursorPosition = function (e) {
     var x, y;
     if (e.pageX != undefined && e.pageY != undefined) {
@@ -17,79 +18,89 @@ var getCursorPosition = function (e) {
     return [Math.floor(y/15), Math.floor(x/15)];
 }
 
-var drawMap = function (tempCopy, centery, centerx) {
-    if (centerx < WINDOW/2) {
-        centerx = WINDOW/2;
+var drawMap = function (tempCopy, centery, centerx, layer, stage) {
+    layer.clear();
+    var tileswide = Math.floor(WINDOWW/15);
+    var tilesheigh = Math.floor(WINDOWH/15);
+    if (centerx < tileswide/2) {
+        centerx = Math.floor(tileswide/2);
     }
-    if (centery < WINDOW/2) {
-        centery = WINDOW/2;
+    if (centery < tilesheigh/2) {
+        centery = Math.floor(tilesheigh/2);
     }
-    if (centerx > 1000 - WINDOW/2) {
-        centerx = 1000 - WINDOW/2;
+    if (centerx > 999 - tileswide/2) {
+        centerx = 999 - Math.floor(tileswide/2);
     }
-    if (centery > 1000 - WINDOW/2) {
-        centery = 1000 - WINDOW/2;
+    if (centery > 999 - tilesheigh/2) {
+        centery = 999 - Math.floor(tilesheigh/2);
     }
-    var our_canvas = $('#map');
-    var ctx = our_canvas.get(0).getContext('2d');
-    var tilecounter = 0;
-    ctx.fillStyle = "rgb(41,41,41)";
-    ctx.lineWidth = .3;
-    ctx.fillRect(0,0, our_canvas.width(), our_canvas.height());
-    for (_j = centery - WINDOW/2, _len2 = centery + WINDOW/2; _j < _len2; _j++) {
+    var fillcolor = "";
+    var ytilecounter = 0;
+    for (_j = centery - Math.floor(tilesheigh/2), _len2 = centery + Math.floor(tilesheigh/2); _j < _len2; _j++) {
       row = tempCopy[_j];
-      for (_x = centerx - WINDOW/2, _len3 = centerx + WINDOW/2; _x < _len3; _x++) {
-        ctx.strokeStyle = "rgb(85,98,102,0.2)";
+      var xtilecounter = 0;
+      for (_x = centerx - Math.floor(tileswide/2), _len3 = centerx + Math.floor(tileswide/2); _x < _len3; _x++) {
         if (row[_x].visible) {
           if (row[_x].tile == "floor" || row[_x].tile == "upstair" || row[_x].tile == "downstair") {
             if (row[_x].selected == true) {
-              ctx.fillStyle = "rgb(165,232,168)";
+              fillcolor = "#A5E8A8";
             }
             else {
-              ctx.fillStyle = "rgb(230,230,230)";
+              fillcolor = "#E6E6E6";
             }
           }
           if (row[_x].tile == "wall") {
             if (row[_x].selected == true) {
-              ctx.fillStyle = "rgb(68,97,67)";
+              fillcolor = "#446143";
             }
             else {
-              ctx.fillStyle = "rgb(102,102,102)";
+              fillcolor = "#666666";
             }
           }
         }
         else if (row[_x].remembered) {
           if (row[_x].tile == "floor" || row[_x].tile == "upstair" || row[_x].tile == "downstair") {
-            ctx.fillStyle = "rgb(178,178,178)";
+            fillcolor = "#B2B2B2";
           }
           if (row[_x].tile == "wall") {
-            ctx.fillStyle = "rgb(51,51,51)";
+            fillcolor = "#333333";
           }
         }
         if (row[_x].visible || row[_x].remembered) {
-          ctx.fillRect((tilecounter % 40) * 15, Math.floor(tilecounter/40) * 15, 15, 15); // Top, left, width, height
-          ctx.strokeStyle = "rgb(85,98,102)";
-          ctx.strokeRect((tilecounter % 40) * 15, Math.floor(tilecounter/40) * 15, 15, 15);
-          ctx.fillStyle = "rgb(36,36,36)";
+          rect = new Kinetic.Rect({
+                x: xtilecounter * 15,
+                y: ytilecounter * 15,
+                width: 15,
+                height: 15,
+                fill: fillcolor,
+                stroke: "#556266",
+                strokeWidth: "0.3"
+              });
+          layer.add(rect);
           if (row[_x].contents == "player") {
-            ctx.font = "1.2em monospace"
-            ctx.fillText("@", (tilecounter % 40) * 15 + 4, Math.floor(tilecounter/40) * 15 + 11);
+            playertext = new Kinetic.Text({
+              text: "@",
+              fontFamily: "monospace",
+              fontSize: "10",
+              x: (xtilecounter * 15) + 4,
+              y: (ytilecounter * 15) + 11,
+              textFill: 'black'
+            });
+            layer.add(playertext);
           }
           if (row[_x].tile == "upstair") {
-            ctx.font = "1.2em monospace"
-            ctx.fillText("<", (tilecounter % 40) * 15 + 4, Math.floor(tilecounter/40) * 15 + 11);
           }
           if (row[_x].tile == "downstair") {
-            ctx.font = "1.2em monospace"
-            ctx.fillText(">", (tilecounter % 40) * 15 + 4, Math.floor(tilecounter/40) * 15 + 11);
           }
         }
-        tilecounter++;
+        xtilecounter++;
       }
+      ytilecounter++;
     }
+    stage.add(layer);
 }
 
-var constructMap = function (object_data, tempCopy) {
+var constructMap = function (object_data, tempCopy, viewport) {
 	var key, location, _ref;
 	var col, row, _i, _j, _len, _len2;
     var userx, usery;
@@ -112,6 +123,29 @@ var constructMap = function (object_data, tempCopy) {
 		  tempCopy[point.Y][point.X].tile = key.toString();
 		  tempCopy[point.Y][point.X].visible = true
 		  tempCopy[point.Y][point.X].remembered = true
+      if (typeof(tempCopy[point.Y][point.X].kin) != 'undefined') {
+        if (tempCopy[point.Y][point.X].tile == "floor") {
+          tempCopy[point.Y][point.X].kin.setFill("#E6E6E6");
+        } else {
+          tempCopy[point.Y][point.X].kin.setFill("#666666");
+        }
+      } else {
+        if (tempCopy[point.Y][point.X].tile == "floor") {
+          fillcolor = "#E6E6E6";
+        } else {
+          fillcolor = "#666666";
+        }
+        tempCopy[point.Y][point.X].kin = new Kinetic.Rect({
+                x: point.X * 15,
+                y: point.Y * 15,
+                width: 15,
+                height: 15,
+                fill: fillcolor,
+                stroke: "#556266",
+                strokeWidth: "0.3"
+              });
+        viewport.add(tempCopy[point.Y][point.X].kin);
+      }
 		}
 	}
 	
@@ -134,12 +168,24 @@ var constructMap = function (object_data, tempCopy) {
 	tempCopy[centery][centerx].visible = true
 	tempCopy[centery][centerx].remembered = false
 	
-    drawMap(tempCopy, centery, centerx);
+  //drawMap(tempCopy, centery, centerx, layer, stage);
 
 	return true;
 }
 
 $(document).ready(function() {
+  $("#map").width($(document).innerWidth() - 30);
+  WINDOWW = $("#map").width();
+  $("#map").height($(document).innerHeight() - 30);
+  WINDOWH = $("#map").height();
+  var stage = new Kinetic.Stage({
+    container: 'map',
+    width: $("#map").width(),
+    height: $("#map").height()
+  });
+  //var layer = new Kinetic.Layer();
+  var viewport = new Viewport(stage);
+  //layer.setClearBeforeDraw(true);
 	var tempCopy = [];
     var userx, usery;
 	for (var row = 0; row <= 999; row++)
@@ -150,7 +196,7 @@ $(document).ready(function() {
 		  tile: "&nbsp;",
 		  visible: false,
 		  remembered: false
-		};;
+		};
 	  }
 	}
 	
@@ -161,7 +207,7 @@ $(document).ready(function() {
       switch(servermessage.MessageType) {
         case "update":
           console.log(servermessage)
-          constructMap(servermessage, tempCopy);
+          constructMap(servermessage, tempCopy, viewport);
           break;
       }
     }

@@ -52,10 +52,12 @@ func (l *Level) run() {
 				movevector = point{-1, -1}
 			}
 			newlocation := point{l.players[move.mover].location.x + movevector.x, l.players[move.mover].location.y + movevector.y}
-			if newlocation.x <= l.MAXCOLS && newlocation.x > 0 && newlocation.y <= l.MAXROWS && newlocation.y > 0 && l.data[newlocation.x][newlocation.y].physical == "floor" || l.data[newlocation.x][newlocation.y].physical == "upstair" || l.data[newlocation.x][newlocation.y].physical == "downstair" {
-				l.players[move.mover].location.x = newlocation.x
-				l.players[move.mover].location.y = newlocation.y
-				go l.pov()
+			if newlocation.x <= l.MAXCOLS && newlocation.x > 0 && newlocation.y <= l.MAXROWS && newlocation.y > 0 {
+				if l.data[newlocation.x][newlocation.y].physical == "floor" || l.data[newlocation.x][newlocation.y].physical == "upstair" || l.data[newlocation.x][newlocation.y].physical == "downstair" {
+					l.players[move.mover].location.x = newlocation.x
+					l.players[move.mover].location.y = newlocation.y
+					go l.pov()
+				}
 			}
 		case newplayer = <-l.register:
 			fmt.Println("Level: New player registered")
@@ -102,7 +104,7 @@ func (l *Level) pov() {
 				dist++
 				centerx += xmove
 				centery += ymove
-				if centerx < 0 || int(centerx) > l.MAXCOLS || centery < 0 || int(centery) > l.MAXROWS {
+				if centerx < 0 || int(centerx) >= l.MAXCOLS || centery < 0 || int(centery) >= l.MAXROWS {
 					break
 				}
 				curr := ExportPoint{int(math.Floor(centerx)), int(math.Floor(centery))}
@@ -177,10 +179,18 @@ func (l *Level) buildlevel() {
 		}
 	}
 
-	for passes := 0; passes < 4; passes++ {
-		for x := 0; x < int(l.MAXROWS); x++ {
-			for y := 0; y < int(l.MAXCOLS); y++ {
+	for passes := 0; passes < 6; passes++ {
+		data2 := make([][]tile, l.MAXROWS)
+		for i := range data2 {
+			data2[i] = make([]tile, l.MAXCOLS)
+		}
+		for i := range data2 {
+			copy(data2[i], l.data[i])
+		}
+		for x := range l.data {
+			for y := range l.data[x] {
 				wallcount := 0
+				wallcount2 := -1
 				for xadj := -1; xadj <= 1; xadj++ {
 					for yadj := -1; yadj <= 1; yadj++ {
 						if x+xadj >= l.MAXCOLS || x+xadj < 0 || y+yadj >= l.MAXROWS || y+yadj < 0 {
@@ -192,13 +202,32 @@ func (l *Level) buildlevel() {
 						}
 					}
 				}
-				if wallcount >= 5 {
-					l.data[x][y].physical = "wall"
-				} else {
-					l.data[x][y].physical = "floor"
+				if passes < 4 {
+					wallcount2 = 0
+					for xadj := -2; xadj <= 2; xadj++ {
+						for yadj := -2; yadj <= 2; yadj++ {
+							if x+xadj >= l.MAXCOLS || x+xadj < 0 || y+yadj >= l.MAXROWS || y+yadj < 0 {
+								continue
+							}
+							if l.data[x+xadj][y+yadj].physical == "wall" {
+								wallcount2++
+							}
+						}
+					}
+					if wallcount >= 5 || wallcount2 == 0 {
+						data2[x][y].physical = "wall"
+					} else {
+						data2[x][y].physical = "floor"
+					}
 				}
 			}
 		}
+		for x := range l.data {
+			for y := range l.data[x] {
+				l.data[x][y] = data2[x][y]
+			}
+		}
+
 	}
 
 	stairdone := false
