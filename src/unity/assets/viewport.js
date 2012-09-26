@@ -12,8 +12,8 @@ function Viewport(stage) {
     this.maximumScale = 1.5;
     this.scaleRate = 0.03;
 
-        this.canvasWidth = stage.width;
-        this.canvasHeight = stage.height;
+        this.canvasWidth = stage.getWidth();
+        this.canvasHeight = stage.getHeight();
        
         // we zero out the view -- position it at 0,0
         this.viewLeft = 0;
@@ -64,38 +64,38 @@ Viewport.prototype.getNewNodeID = function() {
 Viewport.prototype.setNodeX = function( nodeID, x ) {
         var node = this.getNode( nodeID );
        
-        node.x = this.viewLeft + x;
+        node.attrs.x = this.viewLeft + x;
 }
 
 Viewport.prototype.setNodeY = function( nodeID, y ) {
         var node = this.getNode( nodeID );
        
-        node.y = this.viewTop + y;
+        node.attrs.y = this.viewTop + y;
 }
 
 // returns the game-space position, not the view-space position
 Viewport.prototype.getNodeX = function( nodeID ) {
         var node = this.getNode( nodeID );
        
-        return node.x + this.viewLeft;
+        return node.attrs.x + this.viewLeft;
 }
 
 Viewport.prototype.getNodeY = function( nodeID ) {
         var node = this.getNode( nodeID );
        
-        return node.y + this.viewTop;
+        return node.attrs.y + this.viewTop;
 }
 
 Viewport.prototype.addNodeX = function( nodeID, x ) {
         var node = this.getNode( nodeID );
        
-        node.x += x;
+        node.attrs.x += x;
 }
 
 Viewport.prototype.addNodeY = function( nodeID, y ) {
         var node = this.getNode( nodeID );
        
-        node.y += y;
+        node.attrs.y += y;
 }
 
 Viewport.prototype.getNode = function( nodeID ) {
@@ -126,13 +126,15 @@ Viewport.prototype.add = function(node, /* only required if node doesn't have it
 
         // store node in hashmap by node ID
         this.nodes[node.ID] = node;
-       
+
         // apply view-space position adjustment
-        node.x -= this.viewLeft;
-        node.y -= this.viewTop;
+        node.attrs.x -= this.viewLeft;
+        node.attrs.y -= this.viewTop;
        
         // record that the node is not visible, not added to layer
-        node.isVisible = false;
+        node.attrs.isVisible = false;
+
+        this.layer.add(node);
        
         // log event
         log( "added a new node with ID = " + node.ID );
@@ -158,7 +160,7 @@ Viewport.prototype.updateVisibleNodes = function() {
         // for each node, determine if node is in bounds. if it is, and isn't visible, add it. if it isn't and is visible, remove it.
        
         // store values in local variables for convenience and performance
-        var viewPadding = 100; // for testing only
+        var viewPadding = 5; // for testing only
         var viewLeft = this.viewLeft + viewPadding;
         var viewTop = this.viewTop + viewPadding;
         var viewRight = this.viewRight - viewPadding;
@@ -200,6 +202,8 @@ Viewport.prototype.updateVisibleNodes = function() {
                 // get current node
                 var node = this.getNode(nodeID);
                
+                node.attrs.x = node.attrs.truex - this.viewLeft;
+                node.attrs.y = node.attrs.truey - this.viewTop;
                 // TODO: set node radius to actual value
                 var nodeRadius = node.radius;
                 var nodeDiameter = nodeRadius * 2;
@@ -223,32 +227,32 @@ Viewport.prototype.updateVisibleNodes = function() {
 
                 switch( isInView ) {
                         case true:
-                                if( !node.isVisible ) {
+                                if( node.attrs.isVisible != true ) {
                                         // node isn't visible, and it needs to be
                                        
                                         // add node to layer
                                         this.layer.add(node);
                                        
                                         // flag node as visible
-                                        node.isVisible = true;
+                                        node.attrs.isVisible = true;
                                 }
                                
-                                if( nodeID == 34 ) {
+                                if( nodeID == 213 ) {
                                         log("showing node " + nodeID + ": left=" + nodeLeft + ", right=" + nodeRight + ", top=" + nodeTop + ", bottom=" + nodeBottom );
                                 }
                                 break;
                                
                         case false:
-                                if( node.isVisible ) {
+                                if( node.attrs.isVisible == true ) {
                                         // node is visible, and it shouldn't be
                                        
                                         // remove node from layer
                                         this.layer.remove(node);
                                        
                                         // flag node as not visible
-                                        node.isVisible = false;
+                                        node.attrs.isVisible = false;
                                        
-                                        if( nodeID == 34 || nodeID == 1 ) {
+                                        if( nodeID == 213 || nodeID == 1 ) {
                                                 log("hiding node " + nodeID + ": left=" + nodeLeft + ", right=" + nodeRight + ", top=" + nodeTop + ", bottom=" + nodeBottom );
                                         }
                                 }
@@ -278,7 +282,7 @@ Viewport.prototype.panX = function(amount) {
        
         for( var nodeID in this.nodes ) {
                 // move node position by given amount
-                this.nodes[nodeID].x += -panChange;
+                this.nodes[nodeID].attrs.x += -panChange;
         }
        
         // record new view left
@@ -290,7 +294,7 @@ Viewport.prototype.panY = function(amount) {
        
         for( var nodeID in this.nodes ) {
                 // move node position by given amount
-                this.nodes[nodeID].y += -panChange;
+                this.nodes[nodeID].attrs.y += -panChange;
         }
        
         // record new view top

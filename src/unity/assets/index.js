@@ -1,5 +1,7 @@
 var WINDOWW = 0;
 var WINDOWH = 0;
+var you;
+var firsttime = true;
 var getCursorPosition = function (e) {
     var x, y;
     if (e.pageX != undefined && e.pageY != undefined) {
@@ -110,6 +112,14 @@ var constructMap = function (object_data, tempCopy, viewport) {
       for (_j = 0, _len2 = row.length; _j < _len2; _j++) {
         row[_j].visible = false;
         row[_j].contents = "";
+        if (typeof(row[_j].kin) != "undefined") {
+          if (row[_j].tile == "floor") {
+            row[_j].kin.setFill("#B2B2B2");
+          }
+          if (row[_j].tile == "wall") {
+            row[_j].kin.setFill("#333333");
+          }
+        }
       }
     }
 
@@ -124,27 +134,30 @@ var constructMap = function (object_data, tempCopy, viewport) {
 		  tempCopy[point.Y][point.X].visible = true
 		  tempCopy[point.Y][point.X].remembered = true
       if (typeof(tempCopy[point.Y][point.X].kin) != 'undefined') {
-        if (tempCopy[point.Y][point.X].tile == "floor") {
+        if (tempCopy[point.Y][point.X].tile == "floor" || tempCopy[point.Y][point.X].tile == "upstair" || tempCopy[point.Y][point.X].tile == "downstair") {
           tempCopy[point.Y][point.X].kin.setFill("#E6E6E6");
         } else {
           tempCopy[point.Y][point.X].kin.setFill("#666666");
         }
       } else {
-        if (tempCopy[point.Y][point.X].tile == "floor") {
+        if (tempCopy[point.Y][point.X].tile == "floor" || tempCopy[point.Y][point.X].tile == "upstair" || tempCopy[point.Y][point.X].tile == "downstair") {
           fillcolor = "#E6E6E6";
         } else {
           fillcolor = "#666666";
         }
         tempCopy[point.Y][point.X].kin = new Kinetic.Rect({
+                truex: point.X * 15,
+                truey: point.Y * 15,
                 x: point.X * 15,
-                y: point.Y * 15,
+                y: point.X * 15,
                 width: 15,
                 height: 15,
                 fill: fillcolor,
                 stroke: "#556266",
-                strokeWidth: "0.3"
+                strokeWidth: "0.3",
               });
-        viewport.add(tempCopy[point.Y][point.X].kin);
+        viewport.add(tempCopy[point.Y][point.X].kin, 6);
+        tempCopy[point.Y][point.X].kin.setZIndex(0);
       }
 		}
 	}
@@ -159,10 +172,28 @@ var constructMap = function (object_data, tempCopy, viewport) {
 	  tempCopy[player.Y][player.X].visibile = true;
 	  tempCopy[player.Y][player.X].remembered = true;
 	}
-	
+	if (typeof(you) == 'undefined') {
+    console.log("setting you");
+    you = new Kinetic.Text({
+                text: "@",
+                fontFamily: "Calibri",
+                fontSize: "10",
+                truex: (object_data.You.X * 15) + 2,
+                truey: (object_data.You.Y * 15) + 2,
+                x: object_data.You.X * 15,
+                y: object_data.You.Y * 15,
+                textFill: 'black'
+              });
+    viewport.add(you, 6);
+    you.moveToTop();
+  } else {
+    you.attrs.truex = (object_data.You.X * 15) + 2;
+    you.attrs.truey = (object_data.You.Y * 15) + 2;
+    you.moveToTop();
+    console.log(you.attrs.truex);
+  }
 	centerx = object_data.You.X
 	centery = object_data.You.Y
-	tempCopy[centery][centerx].tile = "floor"
 	tempCopy[centery][centerx].contents = "player";
 	tempCopy[centery][centerx].id = 0;
 	tempCopy[centery][centerx].visible = true
@@ -170,8 +201,16 @@ var constructMap = function (object_data, tempCopy, viewport) {
 	
   //drawMap(tempCopy, centery, centerx, layer, stage);
 
+  if (firsttime == true) {
+    viewport.panRight(object_data.You.X * 15 - Math.floor(WINDOWW/2));
+    viewport.panDown(object_data.You.Y * 15 - Math.floor(WINDOWH/2));
+    firsttime = false;
+  }
+  viewport.draw();
 	return true;
 }
+
+var viewport = {}
 
 $(document).ready(function() {
   $("#map").width($(document).innerWidth() - 30);
@@ -180,11 +219,12 @@ $(document).ready(function() {
   WINDOWH = $("#map").height();
   var stage = new Kinetic.Stage({
     container: 'map',
-    width: $("#map").width(),
-    height: $("#map").height()
+    width: WINDOWW,
+    height: WINDOWH
   });
+  console.log(stage.width);
   //var layer = new Kinetic.Layer();
-  var viewport = new Viewport(stage);
+  viewport = new Viewport(stage);
   //layer.setClearBeforeDraw(true);
 	var tempCopy = [];
     var userx, usery;
