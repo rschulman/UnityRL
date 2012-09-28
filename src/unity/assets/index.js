@@ -1,7 +1,7 @@
 var WINDOWW = 0;
 var WINDOWH = 0;
-var you;
-var firsttime = true;
+var visCenter;
+
 var getCursorPosition = function (e) {
     var x, y;
     if (e.pageX != undefined && e.pageY != undefined) {
@@ -20,44 +20,40 @@ var getCursorPosition = function (e) {
     return [Math.floor(y/15), Math.floor(x/15)];
 }
 
-var drawMap = function (tempCopy, centery, centerx, layer, stage) {
-    layer.clear();
-    var tileswide = Math.floor(WINDOWW/15);
-    var tilesheigh = Math.floor(WINDOWH/15);
-    if (centerx < tileswide/2) {
-        centerx = Math.floor(tileswide/2);
-    }
-    if (centery < tilesheigh/2) {
-        centery = Math.floor(tilesheigh/2);
-    }
-    if (centerx > 999 - tileswide/2) {
-        centerx = 999 - Math.floor(tileswide/2);
-    }
-    if (centery > 999 - tilesheigh/2) {
-        centery = 999 - Math.floor(tilesheigh/2);
-    }
-    var fillcolor = "";
+var drawMap = function (tempCopy, centery, centerx, ctx) {
     var ytilecounter = 0;
-    for (_j = centery - Math.floor(tilesheigh/2), _len2 = centery + Math.floor(tilesheigh/2); _j < _len2; _j++) {
+    var zoomlevel = 1;
+    var tileswide = Math.floor(WINDOWW/(15 * zoomlevel));
+    var tilesheigh = Math.floor(WINDOWH/(15 * zoomlevel));
+
+    if (typeof(visCenter) == "undefined") {
+      visCenter = {X: centerx, Y: centery};
+      if (centerx < tileswide/2) {
+          visCenter.X = Math.floor(tileswide/2);
+      }
+      if (centery < tilesheigh/2) {
+          visCenter.Y = Math.floor(tilesheigh/2);
+      }
+      if (centerx > 999 - tileswide/2) {
+          visCenter.X = 999 - Math.floor(tileswide/2);
+      }
+      if (centery > 999 - tilesheigh/2) {
+          visCenter.Y = 999 - Math.floor(tilesheigh/2);
+      }
+    }
+
+    var fillcolor = "";
+
+    for (_j = visCenter.Y - Math.floor(tilesheigh/2), _len2 = visCenter.Y + Math.floor(tilesheigh/2); _j < _len2; _j++) {
       row = tempCopy[_j];
       var xtilecounter = 0;
-      for (_x = centerx - Math.floor(tileswide/2), _len3 = centerx + Math.floor(tileswide/2); _x < _len3; _x++) {
+      for (_x = visCenter.X - Math.floor(tileswide/2), _len3 = visCenter.X + Math.floor(tileswide/2); _x < _len3; _x++) {
         if (row[_x].visible) {
           if (row[_x].tile == "floor" || row[_x].tile == "upstair" || row[_x].tile == "downstair") {
-            if (row[_x].selected == true) {
-              fillcolor = "#A5E8A8";
-            }
-            else {
-              fillcolor = "#E6E6E6";
-            }
+            fillcolor = "#E6E6E6";
           }
           if (row[_x].tile == "wall") {
-            if (row[_x].selected == true) {
-              fillcolor = "#446143";
-            }
-            else {
-              fillcolor = "#666666";
-            }
+            fillcolor = "#666666";
           }
         }
         else if (row[_x].remembered) {
@@ -69,26 +65,13 @@ var drawMap = function (tempCopy, centery, centerx, layer, stage) {
           }
         }
         if (row[_x].visible || row[_x].remembered) {
-          rect = new Kinetic.Rect({
-                x: xtilecounter * 15,
-                y: ytilecounter * 15,
-                width: 15,
-                height: 15,
-                fill: fillcolor,
-                stroke: "#556266",
-                strokeWidth: "0.3"
-              });
-          layer.add(rect);
+          ctx.fillStyle = fillcolor;
+          ctx.rect(xtilecounter * 15, ytilecounter * 15, 15 * zoomlevel, 15 * zoomlevel);
+          ctx.fill();
           if (row[_x].contents == "player") {
-            playertext = new Kinetic.Text({
-              text: "@",
-              fontFamily: "monospace",
-              fontSize: "10",
-              x: (xtilecounter * 15) + 4,
-              y: (ytilecounter * 15) + 11,
-              textFill: 'black'
-            });
-            layer.add(playertext);
+            ctx.font = "15px Calibri";
+            ctx.fillcolor = "black";
+            ctx.fillText("@", (xtilecounter * 15) + 4, (ytilecounter * 15) + 11);
           }
           if (row[_x].tile == "upstair") {
           }
@@ -99,10 +82,9 @@ var drawMap = function (tempCopy, centery, centerx, layer, stage) {
       }
       ytilecounter++;
     }
-    stage.add(layer);
 }
 
-var constructMap = function (object_data, tempCopy, viewport) {
+var constructMap = function (object_data, tempCopy, ctx) {
 	var key, location, _ref;
 	var col, row, _i, _j, _len, _len2;
     var userx, usery;
@@ -112,14 +94,6 @@ var constructMap = function (object_data, tempCopy, viewport) {
       for (_j = 0, _len2 = row.length; _j < _len2; _j++) {
         row[_j].visible = false;
         row[_j].contents = "";
-        if (typeof(row[_j].kin) != "undefined") {
-          if (row[_j].tile == "floor") {
-            row[_j].kin.setFill("#B2B2B2");
-          }
-          if (row[_j].tile == "wall") {
-            row[_j].kin.setFill("#333333");
-          }
-        }
       }
     }
 
@@ -133,32 +107,6 @@ var constructMap = function (object_data, tempCopy, viewport) {
 		  tempCopy[point.Y][point.X].tile = key.toString();
 		  tempCopy[point.Y][point.X].visible = true
 		  tempCopy[point.Y][point.X].remembered = true
-      if (typeof(tempCopy[point.Y][point.X].kin) != 'undefined') {
-        if (tempCopy[point.Y][point.X].tile == "floor" || tempCopy[point.Y][point.X].tile == "upstair" || tempCopy[point.Y][point.X].tile == "downstair") {
-          tempCopy[point.Y][point.X].kin.setFill("#E6E6E6");
-        } else {
-          tempCopy[point.Y][point.X].kin.setFill("#666666");
-        }
-      } else {
-        if (tempCopy[point.Y][point.X].tile == "floor" || tempCopy[point.Y][point.X].tile == "upstair" || tempCopy[point.Y][point.X].tile == "downstair") {
-          fillcolor = "#E6E6E6";
-        } else {
-          fillcolor = "#666666";
-        }
-        tempCopy[point.Y][point.X].kin = new Kinetic.Rect({
-                truex: point.X * 15,
-                truey: point.Y * 15,
-                x: point.X * 15,
-                y: point.X * 15,
-                width: 15,
-                height: 15,
-                fill: fillcolor,
-                stroke: "#556266",
-                strokeWidth: "0.3",
-              });
-        viewport.add(tempCopy[point.Y][point.X].kin, 6);
-        tempCopy[point.Y][point.X].kin.setZIndex(0);
-      }
 		}
 	}
 	
@@ -166,66 +114,31 @@ var constructMap = function (object_data, tempCopy, viewport) {
 	var players_data = object_data["PCs"];
 	for (name in object_data["PCs"]) {
 	  player = players_data[name];
-	  tempCopy[player.Y][player.X].tile = "floor";
 	  tempCopy[player.Y][player.X].contents = "player";
 	  tempCopy[player.Y][player.X].id = player.id;
 	  tempCopy[player.Y][player.X].visibile = true;
 	  tempCopy[player.Y][player.X].remembered = true;
 	}
-	if (typeof(you) == 'undefined') {
-    console.log("setting you");
-    you = new Kinetic.Text({
-                text: "@",
-                fontFamily: "Calibri",
-                fontSize: "10",
-                truex: (object_data.You.X * 15) + 2,
-                truey: (object_data.You.Y * 15) + 2,
-                x: object_data.You.X * 15,
-                y: object_data.You.Y * 15,
-                textFill: 'black'
-              });
-    viewport.add(you, 6);
-    you.moveToTop();
-  } else {
-    you.attrs.truex = (object_data.You.X * 15) + 2;
-    you.attrs.truey = (object_data.You.Y * 15) + 2;
-    you.moveToTop();
-    console.log(you.attrs.truex);
-  }
-	centerx = object_data.You.X
-	centery = object_data.You.Y
-	tempCopy[centery][centerx].contents = "player";
-	tempCopy[centery][centerx].id = 0;
-	tempCopy[centery][centerx].visible = true
-	tempCopy[centery][centerx].remembered = false
+	playerx = object_data.You.X
+	playery = object_data.You.Y
+	tempCopy[playery][playerx].contents = "player";
+	tempCopy[playery][playerx].id = 0;
+	tempCopy[playery][playerx].visible = true
+	tempCopy[playery][playerx].remembered = false
 	
-  //drawMap(tempCopy, centery, centerx, layer, stage);
+  drawMap(tempCopy, playery, playerx, ctx);
 
-  if (firsttime == true) {
-    viewport.panRight(object_data.You.X * 15 - Math.floor(WINDOWW/2));
-    viewport.panDown(object_data.You.Y * 15 - Math.floor(WINDOWH/2));
-    firsttime = false;
-  }
-  viewport.draw();
 	return true;
 }
-
-var viewport = {}
 
 $(document).ready(function() {
   $("#map").width($(document).innerWidth() - 30);
   WINDOWW = $("#map").width();
   $("#map").height($(document).innerHeight() - 30);
   WINDOWH = $("#map").height();
-  var stage = new Kinetic.Stage({
-    container: 'map',
-    width: WINDOWW,
-    height: WINDOWH
-  });
-  console.log(stage.width);
-  //var layer = new Kinetic.Layer();
-  viewport = new Viewport(stage);
-  //layer.setClearBeforeDraw(true);
+
+  var canvas = document.getElementById("map");
+  var ctx = canvas.getContext("2d");
 	var tempCopy = [];
     var userx, usery;
 	for (var row = 0; row <= 999; row++)
@@ -247,7 +160,7 @@ $(document).ready(function() {
       switch(servermessage.MessageType) {
         case "update":
           console.log(servermessage)
-          constructMap(servermessage, tempCopy, viewport);
+          constructMap(servermessage, tempCopy, ctx);
           break;
       }
     }
