@@ -25,8 +25,9 @@ var drawMap = function (tempCopy, centery, centerx, ctx) {
     var zoomlevel = 1;
     var tileswide = Math.floor(WINDOWW/(15 * zoomlevel));
     var tilesheigh = Math.floor(WINDOWH/(15 * zoomlevel));
+    ctx.lineWidth = .3;
 
-    if (typeof(visCenter) == "undefined") {
+    if (typeof(visCenter) == "undefined" || centerx < visCenter.X - tileswide/2 || centerx > visCenter.X + tileswide/2 || centery < visCenter.Y - tilesheigh/2 || centery > visCenter.Y + tilesheigh/2) {
       visCenter = {X: centerx, Y: centery};
       if (centerx < tileswide/2) {
           visCenter.X = Math.floor(tileswide/2);
@@ -43,6 +44,8 @@ var drawMap = function (tempCopy, centery, centerx, ctx) {
     }
 
     var fillcolor = "";
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(0,0,WINDOWW, WINDOWH);
 
     for (_j = visCenter.Y - Math.floor(tilesheigh/2), _len2 = visCenter.Y + Math.floor(tilesheigh/2); _j < _len2; _j++) {
       row = tempCopy[_j];
@@ -66,16 +69,23 @@ var drawMap = function (tempCopy, centery, centerx, ctx) {
         }
         if (row[_x].visible || row[_x].remembered) {
           ctx.fillStyle = fillcolor;
-          ctx.rect(xtilecounter * 15, ytilecounter * 15, 15 * zoomlevel, 15 * zoomlevel);
-          ctx.fill();
+          ctx.fillRect(xtilecounter * 15 * zoomlevel, ytilecounter * 15 * zoomlevel, 15 * zoomlevel, 15 * zoomlevel);
+          ctx.fillStyle = "#556266";
+          ctx.strokeRect(xtilecounter * 15 * zoomlevel, ytilecounter * 15 * zoomlevel, 15 * zoomlevel, 15 * zoomlevel);
           if (row[_x].contents == "player") {
-            ctx.font = "15px Calibri";
-            ctx.fillcolor = "black";
-            ctx.fillText("@", (xtilecounter * 15) + 4, (ytilecounter * 15) + 11);
+            ctx.font = "13px Calibri";
+            ctx.fillStyle = "#000000";
+            ctx.fillText("@", (xtilecounter * 15 * zoomlevel) + 2, (ytilecounter * 15 * zoomlevel) + 11);
           }
           if (row[_x].tile == "upstair") {
+            ctx.font = "13px Calibri";
+            ctx.fillStyle = "#000000";
+            ctx.fillText("<", (xtilecounter * 15 * zoomlevel) + 2, (ytilecounter * 15 * zoomlevel) + 11);
           }
           if (row[_x].tile == "downstair") {
+            ctx.font = "13px Calibri";
+            ctx.fillStyle = "#000000";
+            ctx.fillText(">", (xtilecounter * 15 * zoomlevel) + 2, (ytilecounter * 15 * zoomlevel) + 11);
           }
         }
         xtilecounter++;
@@ -132,10 +142,14 @@ var constructMap = function (object_data, tempCopy, ctx) {
 }
 
 $(document).ready(function() {
-  $("#map").width($(document).innerWidth() - 30);
+  $("#map").width($(document).innerWidth() - 20);
+  $("#map").prop('width', $(document).innerWidth() - 20);
   WINDOWW = $("#map").width();
-  $("#map").height($(document).innerHeight() - 30);
+  $("#map").height($(document).innerHeight() - 20);
+  $("#map").prop('height', $(document).innerHeight() - 20);
   WINDOWH = $("#map").height();
+
+  $("#lchat").css("top", $(document).innerHeight() - 165);
 
   var canvas = document.getElementById("map");
   var ctx = canvas.getContext("2d");

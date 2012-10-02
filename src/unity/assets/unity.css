@@ -9,6 +9,17 @@ body {
     color:				#FFFFFF;
 }
 
+#lchat {
+    position: absolute;
+    left: 15px;
+    height: 150px;
+    width: 400px;
+    background: rgba(178,178,178,0.3);
+    font-family: Calibri;
+    font-size: 10px;
+    border: thin solid rgba(230,230,230,0.4);
+}
+
 #login {
 	font-family:		"Courier New",monospace;
     font-size:			.75em;
