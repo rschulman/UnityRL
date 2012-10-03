@@ -14,7 +14,7 @@ type Mob struct{}
 type Level struct {
 	MAXROWS, MAXCOLS int
 	data             [][]tile
-	players          map[int]*Player
+	players          map[string]*Player
 	mobs             map[int]Mob
 	depth            uint
 	downstair        point
@@ -355,7 +355,7 @@ func generate(dlvl uint) *Level {
 	working.register = make(chan *Player)
 	working.unregister = make(chan *Player)
 	working.playermove = make(chan *moveorder)
-	working.players = make(map[int]*Player)
+	working.players = make(map[string]*Player)
 	working.mobs = make(map[int]Mob)
 	working.depth = dlvl
 	return working

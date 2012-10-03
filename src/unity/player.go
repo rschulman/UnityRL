@@ -9,7 +9,7 @@ import (
 
 type Player struct {
 	ws *websocket.Conn
-	id int
+	id string
 
 	send chan string
 

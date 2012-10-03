@@ -18,7 +18,7 @@ type room struct {
 }
 
 type moveorder struct {
-	mover     int
+	mover     string // its a hash
 	direction string
 }
 

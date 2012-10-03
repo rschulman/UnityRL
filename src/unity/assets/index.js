@@ -150,6 +150,10 @@ $(document).ready(function() {
   WINDOWH = $("#map").height();
 
   $("#lchat").css("top", $(document).innerHeight() - 165);
+  $("#lchat").hide();
+
+  $("#login").css('top', $(document).innerHeight()/2 - 50);
+  $("#login").css('left', $(document).innerWidth()/2 - 125);
 
   var canvas = document.getElementById("map");
   var ctx = canvas.getContext("2d");
@@ -167,17 +171,29 @@ $(document).ready(function() {
 	  }
 	}
 	
-    var socket = new WebSocket("ws://localhost:8080/ws");
 
-    socket.onmessage = function(message) {
-      var servermessage = JSON.parse(message.data)
-      switch(servermessage.MessageType) {
-        case "update":
-          console.log(servermessage)
-          constructMap(servermessage, tempCopy, ctx);
-          break;
-      }
+  var socket = new WebSocket("ws://localhost:8080/ws");
+
+  $('#login').keypress(function(event) {
+    if (event.which == 13) {
+        var message = {MessageType:"login", MessageContent: $('#logintext').val()};
+        socket.send(JSON.stringify(message));
+        $('#login').val('');
+        $('#login').hide();
+        $("#lchat").show();
     }
+    event.stopPropagation();
+  });
+
+  socket.onmessage = function(message) {
+    var servermessage = JSON.parse(message.data)
+    switch(servermessage.MessageType) {
+      case "update":
+        console.log(servermessage)
+        constructMap(servermessage, tempCopy, ctx);
+        break;
+    }
+  };
 /*    socket.on('level chat', function(message) {
         $('#level').append(message + '</br>');
         $("#level").scrollTop($("#level")[0].scrollHeight);
@@ -189,7 +205,7 @@ $(document).ready(function() {
         usery = message.you[1];
         constructMap(message, tempCopy);
     });
-*/
+
 
     $('#levelChat').keypress(function(event) {
         if (event.which == 13) {
@@ -259,7 +275,7 @@ $(document).ready(function() {
 
         drawMap(tempCopy, usery, userx);
 	});
-	
+	*/
     $('html').keypress(function (event) {
         var keycode = (event.keyCode ? event.keyCode : event.which);
         var message = {MessageType:"move"}

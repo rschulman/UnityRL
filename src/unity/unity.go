@@ -5,25 +5,47 @@ import (
 	"fmt"
 	"net/http"
 	"text/template"
+	"encoding/json"
+	"crypto/md5"
+	"hash"
 	//"log"
 )
 
 var rootTempl = template.Must(template.ParseFiles("index.html"))
+var groundfloor *Level
 
 func rootHandler(c http.ResponseWriter, req *http.Request) {
 	rootTempl.Execute(c, req.Host)
 }
 
+func loginUser(ws *websocket.Conn) {
+	for {
+		var message string
+		var decode userMessage
+
+		err := websocket.Message.Receive(ws, &message)
+		fmt.Println(message)
+		if err != nil {
+			break
+		}
+		err = json.Unmarshal([]byte(message), &decode)
+		if decode.MessageType == "login" {
+			var h hash.Hash = md5.New()
+			h.Write([]byte(decode.MessageContent))
+			c := &Player{send: make(chan string, 256), ws: ws, name: decode.MessageContent, id: string(h.Sum(nil)), dlvl: 1, level: groundfloor, hp: 13, str: 8, dex: 8, intel: 8, wis: 8}
+			groundfloor.register <- c
+			defer func() { groundfloor.unregister <- c }()
+			go c.writer()
+			c.reader()
+		}
+	}
+}
+
 func main() {
-	var groundfloor *Level
 	http.HandleFunc("/", rootHandler)
 	http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
 	http.Handle("/ws", websocket.Handler(func(ws *websocket.Conn) {
-		c := &Player{send: make(chan string, 256), ws: ws, id: 1, dlvl: 1, level: groundfloor, hp: 13, str: 8, dex: 8, intel: 8, wis: 8}
-		groundfloor.register <- c
-		defer func() { groundfloor.unregister <- c }()
-		go c.writer()
-		c.reader()
+		loginUser(ws)
 	}))
 	fmt.Println("Creating new first level.")
 	groundfloor = generate(1)
