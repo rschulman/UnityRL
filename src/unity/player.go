@@ -37,12 +37,6 @@ func (c *Player) reader() {
 		if err != nil {
 			break
 		}
-		/*		dec := json.NewDecoder(strings.NewReader(message))
-				if err := dec.Decode(&decode); err != nil {
-					fmt.Println(err)
-					break
-				}
-		*/
 		err = json.Unmarshal([]byte(message), &decode)
 		switch decode.MessageType {
 		case "move":

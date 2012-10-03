@@ -1,8 +1,8 @@
 package main
 
 type tile struct { // single tile
-	physical string // "floor" or "wall" or "upstair" etc
-
+	physical string             // "floor" or "wall" or "upstair" etc
+	pcs      map[string]*Player // Who is in this particular tile
 }
 
 type point struct {

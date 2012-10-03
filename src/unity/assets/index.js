@@ -122,12 +122,12 @@ var constructMap = function (object_data, tempCopy, ctx) {
 	
 	var name, player;
 	var players_data = object_data["PCs"];
-	for (name in object_data["PCs"]) {
-	  player = players_data[name];
-	  tempCopy[player.Y][player.X].contents = "player";
-	  tempCopy[player.Y][player.X].id = player.id;
-	  tempCopy[player.Y][player.X].visibile = true;
-	  tempCopy[player.Y][player.X].remembered = true;
+	for (pcid in object_data["PCs"]) {
+	  player = players_data[pcid];
+	  tempCopy[player.Location.Y][player.Location.X].contents = "player";
+	  tempCopy[player.Location.Y][player.Location.X].id = player.id;
+	  tempCopy[player.Location.Y][player.Location.X].visibile = true;
+	  tempCopy[player.Location.Y][player.Location.X].remembered = true;
 	}
 	playerx = object_data.You.X
 	playery = object_data.You.Y

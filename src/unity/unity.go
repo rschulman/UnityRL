@@ -7,7 +7,7 @@ import (
 	"text/template"
 	"encoding/json"
 	"crypto/md5"
-	"hash"
+	"io"
 	//"log"
 )
 
@@ -30,9 +30,9 @@ func loginUser(ws *websocket.Conn) {
 		}
 		err = json.Unmarshal([]byte(message), &decode)
 		if decode.MessageType == "login" {
-			var h hash.Hash = md5.New()
-			h.Write([]byte(decode.MessageContent))
-			c := &Player{send: make(chan string, 256), ws: ws, name: decode.MessageContent, id: string(h.Sum(nil)), dlvl: 1, level: groundfloor, hp: 13, str: 8, dex: 8, intel: 8, wis: 8}
+			var h = md5.New()
+			io.WriteString(h, decode.MessageContent)
+			c := &Player{send: make(chan string, 256), ws: ws, name: decode.MessageContent, id: fmt.Sprintf("%x", h.Sum(nil)), dlvl: 1, level: groundfloor, hp: 13, str: 8, dex: 8, intel: 8, wis: 8}
 			groundfloor.register <- c
 			defer func() { groundfloor.unregister <- c }()
 			go c.writer()

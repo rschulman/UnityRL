@@ -56,11 +56,13 @@ func (l *Level) run() {
 				if l.data[newlocation.x][newlocation.y].physical == "floor" || l.data[newlocation.x][newlocation.y].physical == "upstair" || l.data[newlocation.x][newlocation.y].physical == "downstair" {
 					l.players[move.mover].location.x = newlocation.x
 					l.players[move.mover].location.y = newlocation.y
+					delete(l.data[l.players[move.mover].location.x][l.players[move.mover].location.y].pcs, move.mover)
+					l.data[newlocation.x][newlocation.y].pcs[move.mover] = l.players[move.mover]
 					go l.pov()
 				}
 			}
 		case newplayer = <-l.register:
-			fmt.Println("Level: New player registered")
+			fmt.Println("Level: New player registered: ", newplayer.id)
 			newplayer.location = point{l.upstair.x, l.upstair.y}
 			l.players[newplayer.id] = newplayer
 			go l.pov()
@@ -74,10 +76,16 @@ func (l *Level) pov() {
 	type ExportPoint struct {
 		X, Y int
 	}
+	type ExportPlayer struct {
+		Name     string
+		ID       string
+		Location ExportPoint
+		HP       int
+	}
 
 	type positionMessage struct {
 		MessageType string
-		PCs         map[string]Player
+		PCs         map[string]ExportPlayer
 		Mobs        map[string]Mob
 		Terrain     map[string][]ExportPoint
 		You         ExportPoint
@@ -87,7 +95,7 @@ func (l *Level) pov() {
 
 	for _, subject := range l.players {
 		messageInstance := new(positionMessage)
-		messageInstance.PCs = make(map[string]Player)
+		messageInstance.PCs = make(map[string]ExportPlayer)
 		messageInstance.Mobs = make(map[string]Mob)
 		messageInstance.Terrain = make(map[string][]ExportPoint)
 		messageInstance.MessageType = "update"
@@ -104,17 +112,20 @@ func (l *Level) pov() {
 				dist++
 				centerx += xmove
 				centery += ymove
+				curr := ExportPoint{int(math.Floor(centerx)), int(math.Floor(centery))}
 				if centerx < 0 || int(centerx) >= l.MAXCOLS || centery < 0 || int(centery) >= l.MAXROWS {
 					break
 				}
-				curr := ExportPoint{int(math.Floor(centerx)), int(math.Floor(centery))}
 				// Check to see if this location has been scanned before.
 				if visited[curr] == false {
 					visited[curr] = true
 					messageInstance.Terrain[l.data[curr.X][curr.Y].physical] = append(messageInstance.Terrain[l.data[curr.X][curr.Y].physical], curr)
-				}
-				if l.data[curr.X][curr.Y].physical == "wall" || dist > vision { // We're looking into a wall, so we can safely stop right now.
-					break
+					if l.data[curr.X][curr.Y].physical == "wall" || dist > vision { // We're looking into a wall, so we can safely stop right now.
+						break
+					}
+					for _, pc := range l.data[curr.X][curr.Y].pcs {
+						messageInstance.PCs[pc.id] = ExportPlayer{pc.name, pc.id, ExportPoint{pc.location.x, pc.location.y}, pc.hp}
+					}
 				}
 			}
 		}
@@ -349,7 +360,7 @@ func generate(dlvl uint) *Level {
 	for i := range working.data {
 		working.data[i] = make([]tile, working.MAXCOLS)
 		for j := range working.data[i] {
-			working.data[i][j] = tile{" "}
+			working.data[i][j] = tile{" ", make(map[string]*Player)}
 		}
 	}
 	working.register = make(chan *Player)
