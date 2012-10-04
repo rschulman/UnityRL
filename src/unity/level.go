@@ -76,6 +76,7 @@ func (l *Level) pov() {
 	type ExportPoint struct {
 		X, Y int
 	}
+
 	type ExportPlayer struct {
 		Name     string
 		ID       string
@@ -108,11 +109,15 @@ func (l *Level) pov() {
 			ymove := math.Sin(radian)
 			//wallbug := false
 			dist := 0
-			for {
+			curr := ExportPoint{int(math.Floor(centerx)), int(math.Floor(centery))}
+			for l.data[curr.X][curr.Y].physical != "wall" {
 				dist++
+				if dist > vision {
+					break
+				}
 				centerx += xmove
 				centery += ymove
-				curr := ExportPoint{int(math.Floor(centerx)), int(math.Floor(centery))}
+				curr = ExportPoint{int(math.Floor(centerx)), int(math.Floor(centery))}
 				if centerx < 0 || int(centerx) >= l.MAXCOLS || centery < 0 || int(centery) >= l.MAXROWS {
 					break
 				}
@@ -120,16 +125,27 @@ func (l *Level) pov() {
 				if visited[curr] == false {
 					visited[curr] = true
 					messageInstance.Terrain[l.data[curr.X][curr.Y].physical] = append(messageInstance.Terrain[l.data[curr.X][curr.Y].physical], curr)
-					if l.data[curr.X][curr.Y].physical == "wall" || dist > vision { // We're looking into a wall, so we can safely stop right now.
-						break
-					}
-					for _, pc := range l.data[curr.X][curr.Y].pcs {
-						messageInstance.PCs[pc.id] = ExportPlayer{pc.name, pc.id, ExportPoint{pc.location.x, pc.location.y}, pc.hp}
-					}
 				}
 			}
 		}
 		messageInstance.You = ExportPoint{subject.location.x, subject.location.y}
+		for _, pc := range l.players {
+			for _, v := range messageInstance.Terrain["floor"] {
+				if pc.location.x == v.X && pc.location.y == v.Y {
+					messageInstance.PCs[pc.id] = ExportPlayer{pc.name, pc.id, ExportPoint{pc.location.x, pc.location.y}, pc.hp}
+				}
+			}
+			for _, v := range messageInstance.Terrain["upstair"] {
+				if pc.location.x == v.X && pc.location.y == v.Y {
+					messageInstance.PCs[pc.id] = ExportPlayer{pc.name, pc.id, ExportPoint{pc.location.x, pc.location.y}, pc.hp}
+				}
+			}
+			for _, v := range messageInstance.Terrain["downstair"] {
+				if pc.location.x == v.X && pc.location.y == v.Y {
+					messageInstance.PCs[pc.id] = ExportPlayer{pc.name, pc.id, ExportPoint{pc.location.x, pc.location.y}, pc.hp}
+				}
+			}
+		}
 		m, err := json.Marshal(messageInstance)
 		if err == nil {
 			subject.send <- string(m)
