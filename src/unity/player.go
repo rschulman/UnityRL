@@ -41,6 +41,8 @@ func (c *Player) reader() {
 		switch decode.MessageType {
 		case "move":
 			c.level.playermove <- &moveorder{c.id, decode.MessageContent}
+		case "levelchat":
+			c.level.chat <- &chatmessage{c.name, decode.MessageContent}
 		}
 	}
 	c.ws.Close()

@@ -22,6 +22,11 @@ type moveorder struct {
 	direction string
 }
 
+type chatmessage struct {
+	sender  string
+	message string
+}
+
 type userMessage struct {
 	MessageType    string
 	MessageContent string

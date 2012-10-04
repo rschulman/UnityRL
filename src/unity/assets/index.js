@@ -185,12 +185,25 @@ $(document).ready(function() {
     event.stopPropagation();
   });
 
+  $('#levelchat').keypress(function(event) {
+      if (event.which == 13) {
+          var message = {MessageType:"levelchat", MessageContent: $('#levelchat').val()};
+          socket.send(JSON.stringify(message));
+          $('#levelchat').val('');
+      }
+  event.stopPropagation();
+  });
+
   socket.onmessage = function(message) {
     var servermessage = JSON.parse(message.data)
     switch(servermessage.MessageType) {
       case "update":
         console.log(servermessage)
         constructMap(servermessage, tempCopy, ctx);
+        break;
+      case "levelchat":
+        $('#lchat').append(servermessage.MessageContent + '</br>');
+        $("#lchat").scrollTop($("#level")[0].scrollHeight);
         break;
     }
   };
@@ -204,16 +217,6 @@ $(document).ready(function() {
         userx = message.you[0];
         usery = message.you[1];
         constructMap(message, tempCopy);
-    });
-
-
-    $('#levelChat').keypress(function(event) {
-        if (event.which == 13) {
-            var message = $('#levelChat').val();
-            socket.emit('level chat', message);
-            $('#levelChat').val('');
-        }
-		event.stopPropagation();
     });
 
 	$("#map").click(function (event) {

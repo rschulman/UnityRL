@@ -23,6 +23,7 @@ type Level struct {
 	register   chan *Player
 	unregister chan *Player
 	playermove chan *moveorder
+	chat       chan *chatmessage
 }
 
 func (l *Level) run() {
@@ -66,6 +67,9 @@ func (l *Level) run() {
 			newplayer.location = point{l.upstair.x, l.upstair.y}
 			l.players[newplayer.id] = newplayer
 			go l.pov()
+
+		case levelchat := <-l.chat:
+			go l.sendchat(levelchat)
 		}
 	}
 }
@@ -148,6 +152,16 @@ func (l *Level) pov() {
 		}
 		m, err := json.Marshal(messageInstance)
 		if err == nil {
+			subject.send <- string(m)
+		}
+	}
+}
+
+func (l *Level) sendchat(chat *chatmessage) {
+	tosend := userMessage{"levelchat", fmt.Sprintf("%s: %s", chat.sender, chat.message)}
+	m, err := json.Marshal(tosend)
+	if err == nil {
+		for _, subject := range l.players {
 			subject.send <- string(m)
 		}
 	}
@@ -382,6 +396,7 @@ func generate(dlvl uint) *Level {
 	working.register = make(chan *Player)
 	working.unregister = make(chan *Player)
 	working.playermove = make(chan *moveorder)
+	working.chat = make(chan *chatmessage)
 	working.players = make(map[string]*Player)
 	working.mobs = make(map[int]Mob)
 	working.depth = dlvl
